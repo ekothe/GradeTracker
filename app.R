@@ -4,15 +4,19 @@ library(ggplot2)
 unitcode <-"HPS104"
 assignment1_name <- "Assignment Part A"
 assignment1_weight <- 10
+assignment1_due <-7
 
 assignment2_name <- "Assignment Part B"
 assignment2_weight <- 10
+assignment2_due <-10
 
 assignment3_name <- "Assignment Part C"
 assignment3_weight <- 20
+assignment3_due <-12
 
 assignment4_name <- "Assignment Part D"
 assignment4_weight <- 10
+assignment4_due <-12
 
 ui <- navbarPage(
   paste(unitcode, "Grade Tracker"),
@@ -31,6 +35,7 @@ ui <- navbarPage(
                             min = 0,
                             max = 12,
                             value = 0),
+               p("This tool makes assumptions about the marks available based on the week of trimester, so will provide misleading estimates prior to the release of grades."),
                hr(),
                h4("Assignments"),
                numericInput(
@@ -60,27 +65,7 @@ ui <- navbarPage(
                  min = 0,
                  max = 100,
                  value = 0
-               )#,
-               
-               
-               # hr(),
-               # h4("Skills Assessment"),
-               # p("For accurate results, enter scores after late penalties"),
-               # numericInput(
-               #   "at1",
-               #   "AT1 (%):",
-               #   min = 0,
-               #   max = 100,
-               #   value = 0
-               # ),
-               # numericInput(
-               #  "at2",
-               #   "AT2 (%):",
-               #    min = 0,
-               #     max = 100,
-               #     value = 0
-               #   )
-               
+               )
              ),
              
              # Main panel ----
@@ -119,17 +104,18 @@ ui <- navbarPage(
 # Server logic ----
 server <- function(input, output) {
   
-  week <- reactive({ifelse(input$week>=12, 4,
-                           ifelse(input$week>=10, 3,
-                                  ifelse(input$week>=7, 2, 1
-                                  )))
+  week <- reactive({ifelse(input$week>=assignment4_due, 5,
+                           ifelse(input$week>=assignment4_due, 4,
+                           ifelse(input$week>=assignment2_due, 3,
+                                  ifelse(input$week>=assignment1_due, 2, 1
+                                  ))))
   })
   
   denom <- reactive({
-    ifelse(input$week>=12, 50,
-           ifelse(input$week>=12, 30,
-                  ifelse(input$week>=10, 20,
-                         ifelse(input$week>=7, 10, 0
+    ifelse(input$week>=assignment4_due, assignment1_weight + assignment2_weight + assignment3_weight + assignment4_weight,
+           ifelse(input$week>=assignment3_due, assignment1_weight + assignment2_weight + assignment3_weight,
+                  ifelse(input$week>=assignment2_due, assignment1_weight + assignment2_weight,
+                         ifelse(input$week>=assignment1_due, assignment1_weight, 0
                          ))))
   })
   
@@ -183,12 +169,14 @@ server <- function(input, output) {
   output$targetPlot <- renderPlot({
     
     df <- data.frame(Week = c(0,
-                              7,
-                              9, 
-                              12),
+                              assignment1_due,
+                              assignment2_due,
+                              assignment3_due,
+                              assignment4_due),
                      Score = c(0,
                                weights()$assignment1weight, 
                                weights()$assignment1weight + weights()$assignment2weight, 
+                               weights()$assignment1weight + weights()$assignment2weight + weights()$assignment3weight,
                                weights()$assignment1weight + weights()$assignment2weight + weights()$assignment3weight + weights()$assignment4weight
                      )
     )
