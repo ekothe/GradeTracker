@@ -1,8 +1,21 @@
 library(shiny)
 library(ggplot2)
 
+unitcode <-"HPS104"
+assignment1_name <- "Assignment Part A"
+assignment1_weight <- 10
+
+assignment2_name <- "Assignment Part B"
+assignment2_weight <- 10
+
+assignment3_name <- "Assignment Part C"
+assignment3_weight <- 20
+
+assignment4_name <- "Assignment Part D"
+assignment4_weight <- 10
+
 ui <- navbarPage(
-  "HPS111 Grade Tracker",
+  paste(unitcode, "Grade Tracker"),
   
   
   tabPanel("Tracker",
@@ -19,54 +32,54 @@ ui <- navbarPage(
                             max = 12,
                             value = 0),
                hr(),
-               h4("Knowledge Assessment"),
+               h4("Assignments"),
                numericInput(
-                 "quiz1",
-                 "Quiz 1 (/9):",
+                 "assignment1",
+                 paste(assignment1_name," % Grade"),
                  min = 0,
-                 max = 9,
+                 max = 100,
                  value = 0
                ),
                numericInput(
-                 "quiz2",
-                 "Quiz 2 (/9):",
+                 "assignment2",
+                 paste(assignment2_name," % Grade"),
                  min = 0,
-                 max = 9,
+                 max = 100,
                  value = 0
                ),
                numericInput(
-                 "quiz3",
-                 "Quiz 3 (/12):",
+                 "assignment3",
+                 paste(assignment3_name," % Grade"),
                  min = 0,
-                 max = 12,
+                 max = 100,
                  value = 0
                ),
+               numericInput(
+                 "assignment4",
+                 paste(assignment4_name," % Grade"),
+                 min = 0,
+                 max = 100,
+                 value = 0
+               )#,
+               
+               
+               # hr(),
+               # h4("Skills Assessment"),
+               # p("For accurate results, enter scores after late penalties"),
                # numericInput(
-               #   "exam",
-               #   "Exam (%):",
+               #   "at1",
+               #   "AT1 (%):",
                #   min = 0,
-               #   max = 12,
+               #   max = 100,
                #   value = 0
-               #),
-               
-               
-               hr(),
-               h4("Skills Assessment"),
-               p("For accurate results, enter scores after late penalties"),
-               numericInput(
-                 "at1",
-                 "AT1 (%):",
-                 min = 0,
-                 max = 100,
-                 value = 0
-               ),
-               numericInput(
-                 "at2",
-                 "AT2 (%):",
-                 min = 0,
-                 max = 100,
-                 value = 0
-               )
+               # ),
+               # numericInput(
+               #  "at2",
+               #   "AT2 (%):",
+               #    min = 0,
+               #     max = 100,
+               #     value = 0
+               #   )
                
              ),
              
@@ -106,43 +119,37 @@ ui <- navbarPage(
 # Server logic ----
 server <- function(input, output) {
   
-  week <- reactive({ifelse(input$week>=12, 6,
-                                  ifelse(input$week>=11, 5,
-                                         ifelse(input$week>=9, 4,
-                                                ifelse(input$week>=7, 3,
-                                                       ifelse(input$week>=4, 2, 1
-                                                              )))))
-    })
-    
-  denom <- reactive({
-    ifelse(input$week>=12, 70,
-           ifelse(input$week>=11, 40,
-                  ifelse(input$week>=9, 32,
-                         ifelse(input$week>=7, 12,
-                                ifelse(input$week>=4, 6, 0
-                                      )))))
+  week <- reactive({ifelse(input$week>=12, 4,
+                           ifelse(input$week>=10, 3,
+                                  ifelse(input$week>=7, 2, 1
+                                  )))
   })
+  
+  denom <- reactive({
+    ifelse(input$week>=12, 50,
+           ifelse(input$week>=12, 30,
+                  ifelse(input$week>=10, 20,
+                         ifelse(input$week>=7, 10, 0
+                         ))))
+  })
+  
 
   
   weights <-
     reactive({
       list(
-        quiz1weight = round(input$quiz1 / 9 * 6, 2),
-        quiz2weight = round(input$quiz2 / 9 * 6, 2),
-        quiz3weight = round(input$quiz3 / 12 * 8, 2),
-        #examweight  = round(input$exam / 100 * 30, 2),
-        at1weight   = round(input$at1 / 100 * 20, 2),
-        at2weight   = round(input$at2 / 100 * 30, 2)
+        assignment1weight = round(input$assignment1 / 100 * assignment1_weight, 2),
+        assignment2weight = round(input$assignment2 / 100 * assignment2_weight, 2),
+        assignment3weight = round(input$assignment3 / 100 * assignment3_weight, 2),
+        assignment4weight = round(input$assignment4 / 100 * assignment4_weight, 2)
       )
     })
   
   weightsum <- reactive({sum(
-    weights()$quiz1weight,
-    weights()$quiz2weight,
-    weights()$quiz3weight,
-    #weights()$examweight,
-    weights()$at1weight,
-    weights()$at2weight
+    weights()$assignment1weight,
+    weights()$assignment2weight,
+    weights()$assignment3weight,
+    weights()$assignment4weight
   )})
   
   output$statement1 <- renderText({
@@ -162,7 +169,7 @@ server <- function(input, output) {
   })
   output$statement2 <- renderText({
     if((input$target - weightsum())/(100-denom())<1){
-      paste(
+      paste0(
         "To exceed your target of ", 
         input$target, 
         "%, you will require an average of over ",
@@ -170,33 +177,29 @@ server <- function(input, output) {
         "% across the remaining assessments.")
     } else {
       "You cannot reach the specified target with the remaining marks available."
-      }
-  })  
+    }
+  }) 
   
   output$targetPlot <- renderPlot({
     
-     df <- data.frame(Week = c(0,
-                               4,
-                               7, 
-                               9, 
-                               11, 
-                               12),
-                      Score = c(0,
-                                weights()$quiz1, 
-                                weights()$quiz1 + weights()$quiz2, 
-                                weights()$quiz1 + weights()$quiz2 + weights()$at1,
-                                weights()$quiz1 + weights()$quiz2 + weights()$at1 + weights()$quiz3, 
-                                weights()$quiz1 + weights()$quiz2 + weights()$at1 + weights()$quiz3 + weights()$at2
-                                )
-     )
-     df <- df[1:week(), ]
+    df <- data.frame(Week = c(0,
+                              7,
+                              9, 
+                              12),
+                     Score = c(0,
+                               weights()$assignment1weight, 
+                               weights()$assignment1weight + weights()$assignment2weight, 
+                               weights()$assignment1weight + weights()$assignment2weight + weights()$assignment3weight + weights()$assignment4weight
+                     )
+    )
+    df <- df[1:week(), ]
      
-     ggplot(df, aes(Week, Score)) +
-       scale_x_continuous(limits = c(0,13), breaks =  1:12, expand = c(0, 0)) +
-       scale_y_continuous(limits = c(0,100), expand = c(0, 0)) +
-       geom_line(cex = 1) +
-       geom_hline(yintercept = input$target, colour = "red", linetype="dashed") +
-       theme_classic()
+    ggplot(df, aes(Week, Score)) +
+      scale_x_continuous(limits = c(0,13), breaks =  1:12, expand = c(0, 0)) +
+      scale_y_continuous(limits = c(0,100), expand = c(0, 0)) +
+      geom_line(cex = 1) +
+      geom_hline(yintercept = input$target, colour = "red", linetype="dashed") +
+      theme_classic()
   })
 }
 
